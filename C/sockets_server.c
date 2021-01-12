@@ -1,0 +1,69 @@
+#include <stdlib.h>
+#include <stdio.h>
+#include <sys/socket.h>
+#include <arpa/inet.h>
+#include <netinet/in.h>
+#include <string.h>
+
+int main(int cantidad_de_argumentos, const char argumento[]){
+
+    if (cantidad_de_argumentos>1)
+    {
+        int server_socket, client_socket, longitud_cliente, puerto;
+
+        puerto= atoi(argumento[1]);
+
+        struct sockaddr_in server;
+        struct sockaddr_in client;
+
+        server.sin_family= AF_INET;
+        server.sin_port= htons(puerto);
+        server.sin_addr.s_addr= INADDR_ANY;
+        bzero(&(server.sin_zero), 8);
+
+        if ((server_socket= socket(AF_INET, SOCK_STREAM, 0)) == -1)
+        {
+            printf("Nose pude abrir el socket");
+
+            return -1;
+        }
+        if (bind(server_socket, (struct sockaddr *)&server, sizeof(struct sockaddr)))
+        {
+            printf("No pude abrir el puerto %s\n", argumento[1]);
+        }
+        if (listen(server_socket, 5) == -1)
+        {
+            printf("No pude ponerme en modo escucha\n");
+
+            return -3;
+        }
+        longitud_cliente = sizeof(struct sockaddr_in);
+
+        printf("Esperando Clientes");
+        if ((client_socket= accept(server_socket, (struct sockaddr *), &client, &longitud_cliente))==-1)
+        {
+            printf("No pudimos aceptar la conexion\n");
+
+            return -4;
+        }
+        
+        char str[INET_ADDRSTRLEN];
+        inet_ntop(AF_INET, &(client.sin_addr), str, INET_ADDRSTRLEN);
+
+        printf("Se conecto un cliente desde %s:%d. Lo saludo\n", str, client.sin_port);
+        send(client_socket, "Bienvenido a mi servidor.\n", 26, 0);
+
+        printf("saludo enviado\n");
+        shutdown(client_socket, 2);
+        shutdown(server_socket, 2);
+    }else
+    {
+        printf("Por favor indique un puerto\n");
+
+        return -5;
+    }
+    
+    
+
+    return 0;
+}
